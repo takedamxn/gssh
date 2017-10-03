@@ -30,14 +30,29 @@ var (
 	vFlag      bool
 	hFlag      bool
 	configPath string
+	NoPasswordError = errors.New("no password")
 )
 
 type Session struct {
 	ssh.Session
 }
 
+func readPasswordFromTerminal()(passwd string, err error){
+	fmt.Printf("%s@%s's password: ", username, hostname)
+	p, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		return
+	}
+	passwd = string(p)
+	fmt.Println()
+	return
+}
+
 func main() {
 	err := parseArg()
+	if err == NoPasswordError {
+		password, err = readPasswordFromTerminal()
+	}
 	if err != nil {
 		usage()
 		os.Exit(1)
@@ -160,7 +175,7 @@ func parseArg() (err error) {
 		}
 		password = getPassword(username, hostname, port)
 		if len(password) == 0 {
-			return errors.New("password get error")
+			return NoPasswordError
 		}
 	}
 
