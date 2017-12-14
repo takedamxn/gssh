@@ -7,13 +7,9 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"os"
 	"time"
-
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/agent"
-
 	"github.com/pkg/sftp"
 )
 
@@ -31,10 +27,6 @@ func init() {
 
 func main() {
 	var auths []ssh.AuthMethod
-	if aconn, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
-		auths = append(auths, ssh.PublicKeysCallback(agent.NewClient(aconn).Signers))
-
-	}
 	if *PASS != "" {
 		auths = append(auths, ssh.Password(*PASS))
 	}

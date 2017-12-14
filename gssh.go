@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"gssh/common"
 )
 
 var (
@@ -57,11 +58,6 @@ func main() {
 		usage()
 		os.Exit(1)
 	}
-	if username == "" {
-		u, _ := user.Current()
-		username = u.Username
-	}
-
 	// Create client config
 	config := &ssh.ClientConfig{
 		User: username,
@@ -147,7 +143,11 @@ func parseArg() (err error) {
 		}
 		username = s[0]
 		rest = s[1]
+	}else if username == "" {
+		u, _ := user.Current()
+		username = u.Username
 	}
+
 
 	// Get hostname
 	s := strings.Split(rest, ":")
@@ -168,12 +168,12 @@ func parseArg() (err error) {
 	switch {
 	case password != "":
 	default:
-		err = readPasswords()
+		err = common.ReadPasswords(&configPath)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return err
 		}
-		password = getPassword(username, hostname, port)
+		password = common.GetPassword(username, hostname, port)
 		if len(password) == 0 {
 			return NoPasswordError
 		}
