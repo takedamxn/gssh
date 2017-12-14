@@ -1,4 +1,4 @@
-package main
+package common
 
 import (
 	"errors"
@@ -13,22 +13,22 @@ import (
 var sec *ini.Section
 var passwords = make(map[string]string)
 
-func readPasswords() (err error) {
-	if len(configPath) == 0 {
-		configPath = os.Getenv("GSSH_PASSWORDFILE")
-		if len(configPath) == 0 {
+func ReadPasswords(configPath *string) (err error) {
+	if len(*configPath) == 0 {
+		*configPath = os.Getenv("GSSH_PASSWORDFILE")
+		if len(*configPath) == 0 {
 			usr, err := user.Current()
 			if err == nil {
 				f := usr.HomeDir + "/.gssh"
 				_, err = os.Stat(f)
 				if os.IsNotExist(err) == false {
-					configPath = f
+					*configPath = f
 				}
 			}
 		}
 	}
-	if len(configPath) != 0 {
-		cfg, err := ini.InsensitiveLoad(configPath)
+	if len(*configPath) != 0 {
+		cfg, err := ini.InsensitiveLoad(*configPath)
 		if err != nil {
 			return err
 		}
@@ -52,7 +52,7 @@ func readPasswords() (err error) {
 	}
 	return
 }
-func getPassword(u, h string, port int) string {
+func GetPassword(u, h string, port int) string {
 	target := ""
 	// search password with user@hostname[:port]
 	if port != 22 {
