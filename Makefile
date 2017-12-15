@@ -1,11 +1,16 @@
-PROGRAM = gssh gscp
+GSSH=./gssh/gssh
+GSCP=./gscp/gscp
+PROGRAM=${GSSH} ${GSCP}
+
+.PHONY: all
 all:${PROGRAM}
 
-gssh:gssh.go common/config.go
-	go build $@.go
+${GSSH}:$(wildcard gssh/*.go common/*.go)
+	go build -o $@ gssh/gssh
 
-gscp:gscp.go common/config.go
-	go build $@.go
+${GSCP}:$(wildcard gscp/*.go common/*.go)
+	go build -o $@ gssh/gscp
 
+.PHONY: clean
 clean:
 	rm -f ${PROGRAM}
