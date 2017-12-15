@@ -1,5 +1,5 @@
-GSSH=./gssh/gssh
-GSCP=./gscp/gscp
+GSSH=gssh/gssh
+GSCP=gscp/gscp
 PROGRAM=${GSSH} ${GSCP}
 
 .PHONY: all
