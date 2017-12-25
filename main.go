@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"
+	com "gssh/common"
 	"io"
 	"log"
 	"net"
@@ -17,15 +18,14 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	com "gssh/common"
 )
 
 var (
-	command    string
-	passEnv    bool
-	tFlag      bool
-	vFlag      bool
-	hFlag      bool
+	command         string
+	passEnv         bool
+	tFlag           bool
+	vFlag           bool
+	hFlag           bool
 	NoPasswordError = errors.New("no password")
 )
 
@@ -127,11 +127,10 @@ func parseArg() (err error) {
 		}
 		com.Username = s[0]
 		rest = s[1]
-	}else if com.Username == "" {
+	} else if com.Username == "" {
 		u, _ := user.Current()
 		com.Username = u.Username
 	}
-
 
 	// Get hostname
 	s := strings.Split(rest, ":")
