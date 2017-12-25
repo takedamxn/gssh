@@ -10,25 +10,33 @@ import (
 	"strings"
 )
 
+var (
+	Username   string
+	Password   string
+	Hostname   string
+	Port       int
+	ConfigPath string
+)
+
 var sec *ini.Section
 var passwords = make(map[string]string)
 
-func ReadPasswords(configPath *string) (err error) {
-	if len(*configPath) == 0 {
-		*configPath = os.Getenv("GSSH_PASSWORDFILE")
-		if len(*configPath) == 0 {
+func ReadPasswords() (err error) {
+	if len(ConfigPath) == 0 {
+		ConfigPath = os.Getenv("GSSH_PASSWORDFILE")
+		if len(ConfigPath) == 0 {
 			usr, err := user.Current()
 			if err == nil {
 				f := usr.HomeDir + "/.gssh"
 				_, err = os.Stat(f)
 				if os.IsNotExist(err) == false {
-					*configPath = f
+					ConfigPath = f
 				}
 			}
 		}
 	}
-	if len(*configPath) != 0 {
-		cfg, err := ini.InsensitiveLoad(*configPath)
+	if len(ConfigPath) != 0 {
+		cfg, err := ini.InsensitiveLoad(ConfigPath)
 		if err != nil {
 			return err
 		}

@@ -17,20 +17,15 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"gssh/common"
+	com "gssh/common"
 )
 
 var (
-	username   string
-	password   string
-	hostname   string
-	port       int
 	command    string
 	passEnv    bool
 	tFlag      bool
 	vFlag      bool
 	hFlag      bool
-	configPath string
 	NoPasswordError = errors.New("no password")
 )
 
@@ -38,21 +33,10 @@ type Session struct {
 	ssh.Session
 }
 
-func readPasswordFromTerminal()(passwd string, err error){
-	fmt.Printf("%s@%s's password: ", username, hostname)
-	p, err := terminal.ReadPassword(int(os.Stdin.Fd()))
-	if err != nil {
-		return
-	}
-	passwd = string(p)
-	fmt.Println()
-	return
-}
-
 func main() {
 	err := parseArg()
 	if err == NoPasswordError {
-		password, err = readPasswordFromTerminal()
+		com.Password, err = com.ReadPasswordFromTerminal()
 	}
 	if err != nil {
 		usage()
@@ -60,16 +44,16 @@ func main() {
 	}
 	// Create client config
 	config := &ssh.ClientConfig{
-		User: username,
+		User: com.Username,
 		Auth: []ssh.AuthMethod{
-			ssh.Password(password),
+			ssh.Password(com.Password),
 		},
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
 		},
 	}
 
-	addr := fmt.Sprintf("%s:%d", hostname, port)
+	addr := fmt.Sprintf("%s:%d", com.Hostname, com.Port)
 	conn, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		log.Printf("unable to connect: %s", err)
@@ -107,14 +91,14 @@ func main() {
 }
 func parseArg() (err error) {
 
-	username, password, hostname = "", "", ""
-	port = 0
+	com.Username, com.Password, com.Hostname = "", "", ""
+	com.Port = 0
 
 	args := os.Args
 
 	f := flag.NewFlagSet(args[0], flag.ContinueOnError)
-	f.StringVar(&password, "p", "", "password")
-	f.StringVar(&configPath, "f", "", "password file path")
+	f.StringVar(&com.Password, "p", "", "password")
+	f.StringVar(&com.ConfigPath, "f", "", "password file path")
 	f.BoolVar(&passEnv, "e", false, "passing to pty")
 	f.BoolVar(&tFlag, "t", false, "Force pseudo-tty allocation")
 	f.BoolVar(&vFlag, "v", false, "Display Version")
@@ -141,11 +125,11 @@ func parseArg() (err error) {
 		if len(s[0]) == 0 {
 			return fmt.Errorf("user name error")
 		}
-		username = s[0]
+		com.Username = s[0]
 		rest = s[1]
-	}else if username == "" {
+	}else if com.Username == "" {
 		u, _ := user.Current()
-		username = u.Username
+		com.Username = u.Username
 	}
 
 
@@ -154,27 +138,27 @@ func parseArg() (err error) {
 	if len(s[0]) == 0 {
 		return fmt.Errorf("hostname error")
 	}
-	hostname = s[0]
+	com.Hostname = s[0]
 
 	// Get port number
 	if len(s) >= 2 {
-		port, err = strconv.Atoi(s[1])
+		com.Port, err = strconv.Atoi(s[1])
 	}
 	// Connect to ssh server
-	if port == 0 {
-		port = 22
+	if com.Port == 0 {
+		com.Port = 22
 	}
 
 	switch {
-	case password != "":
+	case com.Password != "":
 	default:
-		err = common.ReadPasswords(&configPath)
+		err = com.ReadPasswords()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return err
 		}
-		password = common.GetPassword(username, hostname, port)
-		if len(password) == 0 {
+		com.Password = com.GetPassword(com.Username, com.Hostname, com.Port)
+		if len(com.Password) == 0 {
 			return NoPasswordError
 		}
 	}
@@ -192,8 +176,8 @@ func usage() {
         -p  password
         -f  password list filepath
         -t  Force pseudo-tty allocation.
-        -v  Display version
-        -h  help
+        -v  Show version
+        -h  Show help
 `)
 }
 func help() {
@@ -204,7 +188,7 @@ func help() {
         -p  password
         -f  password list filepath
         -t  Force pseudo-tty allocation.
-        -v  Display version
+        -v  Show version
         -h  help
       for example:
         1) $ cat gssh.conf
