@@ -39,7 +39,7 @@ func main() {
 		com.Password, err = com.ReadPasswordFromTerminal()
 	}
 	if err != nil {
-		usage()
+		fmt.Println(err)
 		os.Exit(1)
 	}
 	// Create client config
@@ -110,11 +110,12 @@ func parseArg() (err error) {
 		fmt.Println(path.Base(os.Args[0]), "version 0.9.0")
 		os.Exit(0)
 	}
-	if hFlag {
-		help()
-		os.Exit(1)
+	usage := func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [-t] [-p password] [-f file] [-v] [user@]hostname[:port] [command]\n", path.Base(os.Args[0]));
+		f.PrintDefaults()
 	}
 	if f.NArg() <= 0 {
+		usage()
 		return fmt.Errorf("too few argument")
 	}
 
@@ -166,41 +167,6 @@ func parseArg() (err error) {
 	command = strings.Join(f.Args()[1:], " ")
 
 	return
-}
-func usage() {
-	fmt.Fprintf(os.Stderr,
-		`Usage: gssh [-t] [-p password] [-f file] [-v] [user@]hostname[:port] [command]
-      if -p password is not set, $GSSH_PASSWORDFILE, $GSSH_PASSWORDS variable will be used.
-      otherwise ~/.gssh file is used
-        -p  password
-        -f  password list filepath
-        -t  Force pseudo-tty allocation.
-        -v  Show version
-        -h  Show help
-`)
-}
-func help() {
-	fmt.Fprintf(os.Stderr,
-		`Usage: gssh [-t] [-p password] [-f file] [-v] [user@]hostname[:port] [command]
-      if -p password is not set, $GSSH_PASSWORDFILE, $GSSH_PASSWORDS variable will be used.
-      otherwise ~/.gssh file is used
-        -p  password
-        -f  password list filepath
-        -t  Force pseudo-tty allocation.
-        -v  Show version
-        -h  help
-      for example:
-        1) $ cat gssh.conf
-            [passwords]
-            user1 = password1
-            user2@hostname = password2
-           $ export GSSH_PASSWORDFILE=gssh.conf
-           $ gssh user1@hostname
-           $ gssh user2@hostname
-        2) $ export GSSH_PASSWORDS="user1=password1 user2@hostname=password2"
-           $ gssh user1@hostname
-           $ gssh user2@hostname
-`)
 }
 
 func (s *Session) requestWindowChange(w, h int) (err error) {
