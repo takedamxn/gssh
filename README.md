@@ -5,3 +5,4 @@ $ git clone https://github.com/takemxn/gssh
 $ cd gssh  
 $ dep ensure  
 $ go build  
+$ go install  
