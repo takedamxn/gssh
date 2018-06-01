@@ -1,6 +1,6 @@
 # gssh  
 *Install*  
-$ go get -u github.com/golang/dep/cmd/dep  　
+$ go get -u github.com/golang/dep/cmd/dep  
 $ cd $GOPATH/src  
 $ git clone https://github.com/takemxn/gssh  
 $ cd gssh  
