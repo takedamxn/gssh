@@ -12,4 +12,4 @@ $ go install
 Usage : gssh [-t] [-p password] [-f file] [user@]hostname[:port] [command]  
 
 ex:  
-$ gssh -p hogepassword hoge@hoge.com  
+$ gssh -p password hoge@hoge.com  
