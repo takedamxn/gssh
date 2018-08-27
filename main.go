@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"
-	com "gssh/common"
+	sshcon "gssh/shared"
 	"io"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"os/user"
@@ -36,39 +35,25 @@ type Session struct {
 func main() {
 	err := parseArg()
 	if err == NoPasswordError {
-		com.Password, err = com.ReadPasswordFromTerminal()
+		sshcon.Password, err = sshcon.ReadPasswordFromTerminal()
 	}
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	// Create client config
-	config := &ssh.ClientConfig{
-		User: com.Username,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(com.Password),
-		},
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			return nil
-		},
-	}
-
-	addr := fmt.Sprintf("%s:%d", com.Hostname, com.Port)
-	conn, err := ssh.Dial("tcp", addr, config)
+	// Create a session
+	conn, err := sshcon.Connect()
 	if err != nil {
-		log.Printf("unable to connect: %s", err)
+		log.Printf("unable to create session: %s", err)
 		return
 	}
 	defer conn.Close()
-
-	// Create a session
 	session, err := conn.NewSession()
 	if err != nil {
 		log.Printf("unable to create session: %s", err)
 		return
 	}
 	defer session.Close()
-
 	// Terminal file descpriter?
 	s := &Session{*session}
 	if terminal.IsTerminal(int(os.Stdin.Fd())) {
@@ -76,7 +61,6 @@ func main() {
 	} else {
 		err = s.remoteExec()
 	}
-
 	// Exit status
 	if err != nil {
 		if exitErr, ok := err.(*ssh.ExitError); ok {
@@ -91,14 +75,14 @@ func main() {
 }
 func parseArg() (err error) {
 
-	com.Username, com.Password, com.Hostname = "", "", ""
-	com.Port = 0
+	sshcon.Username, sshcon.Password, sshcon.Hostname = "", "", ""
+	sshcon.Port = 0
 
 	args := os.Args
 
 	f := flag.NewFlagSet(args[0], flag.ContinueOnError)
-	f.StringVar(&com.Password, "p", "", "password")
-	f.StringVar(&com.ConfigPath, "f", "", "password file path")
+	f.StringVar(&sshcon.Password, "p", "", "password")
+	f.StringVar(&sshcon.ConfigPath, "f", "", "password file path")
 	f.BoolVar(&passEnv, "e", false, "passing to pty")
 	f.BoolVar(&tFlag, "t", false, "Force pseudo-tty allocation")
 	f.BoolVar(&vFlag, "v", false, "Display Version")
@@ -126,11 +110,11 @@ func parseArg() (err error) {
 		if len(s[0]) == 0 {
 			return fmt.Errorf("user name error")
 		}
-		com.Username = s[0]
+		sshcon.Username = s[0]
 		rest = s[1]
-	} else if com.Username == "" {
+	} else if sshcon.Username == "" {
 		u, _ := user.Current()
-		com.Username = u.Username
+		sshcon.Username = u.Username
 	}
 
 	// Get hostname
@@ -138,27 +122,27 @@ func parseArg() (err error) {
 	if len(s[0]) == 0 {
 		return fmt.Errorf("hostname error")
 	}
-	com.Hostname = s[0]
+	sshcon.Hostname = s[0]
 
 	// Get port number
 	if len(s) >= 2 {
-		com.Port, err = strconv.Atoi(s[1])
+		sshcon.Port, err = strconv.Atoi(s[1])
 	}
 	// Connect to ssh server
-	if com.Port == 0 {
-		com.Port = 22
+	if sshcon.Port == 0 {
+		sshcon.Port = 22
 	}
 
 	switch {
-	case com.Password != "":
+	case sshcon.Password != "":
 	default:
-		err = com.ReadPasswords()
+		err = sshcon.ReadPasswords()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return err
 		}
-		com.Password = com.GetPassword(com.Username, com.Hostname, com.Port)
-		if len(com.Password) == 0 {
+		sshcon.Password = sshcon.GetPassword(sshcon.Username, sshcon.Hostname, sshcon.Port)
+		if len(sshcon.Password) == 0 {
 			return NoPasswordError
 		}
 	}
