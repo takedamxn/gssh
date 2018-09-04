@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"
-	sshcon "gssh/shared"
+	ss "github.com/takemxn/gssh/shared"
 	"io"
 	"log"
 	"os"
@@ -33,16 +33,16 @@ type Session struct {
 }
 
 func main() {
-	err := parseArg()
+	config, err := parseArg()
 	if err == NoPasswordError {
-		sshcon.Password, err = sshcon.ReadPasswordFromTerminal()
+		config.Password, err = ss.ReadPasswordFromTerminal(config)
 	}
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 	// Create a session
-	conn, err := sshcon.Connect()
+	conn, err := ss.Connect(config)
 	if err != nil {
 		log.Printf("unable to create session: %s", err)
 		return
@@ -73,16 +73,15 @@ func main() {
 	// Succeeded
 	os.Exit(0)
 }
-func parseArg() (err error) {
-
-	sshcon.Username, sshcon.Password, sshcon.Hostname = "", "", ""
-	sshcon.Port = 0
+func parseArg() (config *ss.Config, err error) {
+	username, password, hostname, configPath := "", "", "", ""
+	port := 0
 
 	args := os.Args
 
 	f := flag.NewFlagSet(args[0], flag.ContinueOnError)
-	f.StringVar(&sshcon.Password, "p", "", "password")
-	f.StringVar(&sshcon.ConfigPath, "f", "", "password file path")
+	f.StringVar(&password, "p", "", "password")
+	f.StringVar(&configPath, "f", "", "password file path")
 	f.BoolVar(&passEnv, "e", false, "passing to pty")
 	f.BoolVar(&tFlag, "t", false, "Force pseudo-tty allocation")
 	f.BoolVar(&vFlag, "v", false, "Display Version")
@@ -100,7 +99,7 @@ func parseArg() (err error) {
 	}
 	if f.NArg() <= 0 {
 		usage()
-		return fmt.Errorf("too few argument")
+		return nil, fmt.Errorf("too few argument")
 	}
 
 	// Get user name
@@ -108,42 +107,42 @@ func parseArg() (err error) {
 	if strings.Contains(f.Arg(0), "@") {
 		s := strings.Split(f.Arg(0), "@")
 		if len(s[0]) == 0 {
-			return fmt.Errorf("user name error")
+			return nil, fmt.Errorf("user name error")
 		}
-		sshcon.Username = s[0]
+		username = s[0]
 		rest = s[1]
-	} else if sshcon.Username == "" {
+	} else if username == "" {
 		u, _ := user.Current()
-		sshcon.Username = u.Username
+		username = u.Username
 	}
 
 	// Get hostname
 	s := strings.Split(rest, ":")
 	if len(s[0]) == 0 {
-		return fmt.Errorf("hostname error")
+		return nil, fmt.Errorf("hostname error")
 	}
-	sshcon.Hostname = s[0]
+	hostname = s[0]
 
 	// Get port number
 	if len(s) >= 2 {
-		sshcon.Port, err = strconv.Atoi(s[1])
+		port, err = strconv.Atoi(s[1])
 	}
 	// Connect to ssh server
-	if sshcon.Port == 0 {
-		sshcon.Port = 22
+	if port == 0 {
+		port = 22
 	}
-
+	config = ss.NewConfig(username, hostname, port, configPath, password)
 	switch {
-	case sshcon.Password != "":
+	case password != "":
 	default:
-		err = sshcon.ReadPasswords()
+		err = config.ReadPasswords()
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			return err
+			return nil, err
 		}
-		sshcon.Password = sshcon.GetPassword(sshcon.Username, sshcon.Hostname, sshcon.Port)
-		if len(sshcon.Password) == 0 {
-			return NoPasswordError
+		config.Password = config.GetPassword(username, hostname, port)
+		if len(config.Password) == 0 {
+			return nil, NoPasswordError
 		}
 	}
 
