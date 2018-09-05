@@ -45,8 +45,8 @@ func (c *Config) ReadPasswords() (err error) {
 		return err
 	}
 	env := os.Getenv("GSSH_PASSWORDS")
-	c.passwords = make(map[string]string)
 	if len(env) != 0 {
+		c.passwords = make(map[string]string)
 		re := regexp.MustCompile("(.+)=(.+)")
 		for _, v := range strings.Split(env, " ") {
 			group := re.FindStringSubmatch(v)
