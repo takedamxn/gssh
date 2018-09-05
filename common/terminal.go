@@ -1,12 +1,12 @@
-package shared
+package common
 
 import (
 	"fmt"
 	"os"
 	"golang.org/x/crypto/ssh/terminal"
 )
-func ReadPasswordFromTerminal(c *Config)(passwd string, err error){
-	fmt.Printf("%s@%s's password: ", c.Username, c.Hostname)
+func ReadPasswordFromTerminal(user, host string)(passwd string, err error){
+	fmt.Printf("%s@%s's password: ", user, host)
 	p, err := terminal.ReadPassword(int(os.Stdin.Fd()))
 	if err != nil {
 		return

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"
-	ss "github.com/takemxn/gssh/shared"
+	com "github.com/takemxn/gssh/common"
 	"io"
 	"log"
 	"os"
@@ -25,41 +25,58 @@ var (
 	tFlag           bool
 	vFlag           bool
 	hFlag           bool
-	NoPasswordError = errors.New("no password")
+	username string
+	hostname string
+	configPath string
+	port int
+	password string
 )
-
 type Session struct {
-	ssh.Session
+	*ssh.Session
 }
 
 func main() {
-	config, err := parseArg()
-	if err == NoPasswordError {
-		config.Password, err = ss.ReadPasswordFromTerminal(config)
-	}
+	err := parseArg()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	config := com.NewConfig(configPath)
+	err = config.ReadPasswords()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	if password == "" {
+		password = config.GetPassword(username, hostname, port)
+		if password == "" {
+			password, err = com.ReadPasswordFromTerminal(username, hostname)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		}
+	}
+	ci := com.NewConnectInfo(username, hostname, port, password)
 	// Create a session
-	conn, err := ss.Connect(config)
+	conn, err := ci.Connect()
 	if err != nil {
 		log.Printf("unable to create session: %s", err)
 		return
 	}
 	defer conn.Close()
-	session, err := conn.NewSession()
+	ses, err := conn.NewSession()
 	if err != nil {
 		log.Printf("unable to create session: %s", err)
 		return
 	}
-	defer session.Close()
+	defer ses.Close()
+	s := Session{ses}
 	// Terminal file descpriter?
-	s := &Session{*session}
 	if terminal.IsTerminal(int(os.Stdin.Fd())) {
 		err = s.remoteShell()
 	} else {
-		err = s.remoteExec()
+		err =s.remoteExec()
 	}
 	// Exit status
 	if err != nil {
@@ -73,12 +90,8 @@ func main() {
 	// Succeeded
 	os.Exit(0)
 }
-func parseArg() (config *ss.Config, err error) {
-	username, password, hostname, configPath := "", "", "", ""
-	port := 0
-
+func parseArg() (err error) {
 	args := os.Args
-
 	f := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	f.StringVar(&password, "p", "", "password")
 	f.StringVar(&configPath, "f", "", "password file path")
@@ -99,7 +112,7 @@ func parseArg() (config *ss.Config, err error) {
 	}
 	if f.NArg() <= 0 {
 		usage()
-		return nil, fmt.Errorf("too few argument")
+		return fmt.Errorf("too few argument")
 	}
 
 	// Get user name
@@ -107,7 +120,7 @@ func parseArg() (config *ss.Config, err error) {
 	if strings.Contains(f.Arg(0), "@") {
 		s := strings.Split(f.Arg(0), "@")
 		if len(s[0]) == 0 {
-			return nil, fmt.Errorf("user name error")
+			return fmt.Errorf("user name error")
 		}
 		username = s[0]
 		rest = s[1]
@@ -119,7 +132,7 @@ func parseArg() (config *ss.Config, err error) {
 	// Get hostname
 	s := strings.Split(rest, ":")
 	if len(s[0]) == 0 {
-		return nil, fmt.Errorf("hostname error")
+		return fmt.Errorf("hostname error")
 	}
 	hostname = s[0]
 
@@ -131,21 +144,6 @@ func parseArg() (config *ss.Config, err error) {
 	if port == 0 {
 		port = 22
 	}
-	config = ss.NewConfig(username, hostname, port, configPath, password)
-	switch {
-	case password != "":
-	default:
-		err = config.ReadPasswords()
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			return nil, err
-		}
-		config.Password = config.GetPassword(username, hostname, port)
-		if len(config.Password) == 0 {
-			return nil, NoPasswordError
-		}
-	}
-
 	// command
 	command = strings.Join(f.Args()[1:], " ")
 

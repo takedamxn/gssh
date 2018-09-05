@@ -1,4 +1,4 @@
-package shared
+package common
 
 import (
 	"errors"
@@ -10,34 +10,30 @@ import (
 	"strings"
 )
 type Config struct {
-	Username   string
-	Hostname   string
-	Port       int
-	ConfigPath string
-	Password   string
+	configPath string
 	passwords map[string]string
 	sec *ini.Section
 }
 
-func NewConfig(user, host string,port int, path, passwd string) *Config{
-	return &Config{Username:user, Hostname:host, Port:port, ConfigPath:path, Password:passwd}
+func NewConfig(path string) *Config{
+	return &Config{configPath:path}
 }
 func (c *Config) ReadPasswords() (err error) {
-	if len(c.ConfigPath) == 0 {
-		c.ConfigPath = os.Getenv("GSSH_PASSWORDFILE")
-		if len(c.ConfigPath) == 0 {
+	if len(c.configPath) == 0 {
+		c.configPath = os.Getenv("GSSH_PASSWORDFILE")
+		if len(c.configPath) == 0 {
 			usr, err := user.Current()
 			if err == nil {
 				f := usr.HomeDir + "/.gssh"
 				_, err = os.Stat(f)
 				if os.IsNotExist(err) == false {
-					c.ConfigPath = f
+					c.configPath = f
 				}
 			}
 		}
 	}
-	if len(c.ConfigPath) != 0 {
-		cfg, err := ini.InsensitiveLoad(c.ConfigPath)
+	if len(c.configPath) != 0 {
+		cfg, err := ini.InsensitiveLoad(c.configPath)
 		if err != nil {
 			return err
 		}
