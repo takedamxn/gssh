@@ -41,13 +41,13 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	config := com.NewConfig(configPath)
-	err = config.ReadPasswords()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 	if password == "" {
+		config := com.NewConfig(configPath)
+		err = config.ReadPasswords()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 		password = config.GetPassword(username, hostname, port)
 		if password == "" {
 			password, err = com.ReadPasswordFromTerminal(username, hostname)
