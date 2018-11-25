@@ -1,6 +1,6 @@
 # gssh  
 <pre>
-Usage of gssh:
+Usage: gssh [-t] [-p password] [-f file] [-v] [user@]hostname[:port] [command]
   -e    passing to pty
   -f string
         password file path
