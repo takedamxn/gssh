@@ -1,6 +1,6 @@
-# gssh  
+file# gssh 1
 <pre>
-Usage: gssh [-t] [-p password] [-f file] [-v] [user@]hostname[:port] [command]
+Usage: gssh [-t] [-p password] [-f config_path] [-v] [user@]hostname[:port] [command]
   -e    passing to pty
   -f string
         password file path
@@ -24,9 +24,12 @@ user@host:port=password
 gssh use this file,if specified.
 
 ### GSSH_PASSWORDS
-    For example
-      GSSH_PASSWORDS="user=password user@host=password"
+<pre>
+For example
+  GSSH_PASSWORDS="user=password user@host=password"
 </pre>
 
 ### ~/.gssh file
-    gssh use ~/.gssh as config,if exist.
+<pre>
+  gssh use ~/.gssh as config,if exist.
+</pre>

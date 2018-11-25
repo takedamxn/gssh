@@ -107,7 +107,7 @@ func parseArg() (err error) {
 		os.Exit(0)
 	}
 	usage := func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [-t] [-p password] [-f file] [-v] [user@]hostname[:port] [command]\n", path.Base(os.Args[0]));
+		fmt.Fprintf(os.Stderr, "Usage: %s [-t] [-p password] [-f config_path] [-v] [user@]hostname[:port] [command]\n", path.Base(os.Args[0]));
 		f.PrintDefaults()
 	}
 	if f.NArg() <= 0 {
