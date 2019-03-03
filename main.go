@@ -77,11 +77,13 @@ func main() {
 	}
 	defer ses.Close()
 	s := Session{ses}
+	exitStatus := 0
 	if(timeout > 0){
 		go func(){
 			time.Sleep(time.Duration(timeout) * time.Second)
+			exitStatus = 124
 			s.Signal(ssh.SIGTERM)
-			os.Exit(124)
+			s.Close()
 		}()
 	}
 	// Terminal file descpriter?
@@ -90,8 +92,9 @@ func main() {
 	} else {
 		err =s.remoteExec()
 	}
-	// Exit status
-	if err != nil {
+	// chech remote process exit status
+	// if not set exitStatus
+	if err != nil && exitStatus == 0{
 		if exitErr, ok := err.(*ssh.ExitError); ok {
 			os.Exit(exitErr.ExitStatus())
 		} else {
@@ -100,7 +103,7 @@ func main() {
 		}
 	}
 	// Succeeded
-	os.Exit(0)
+	os.Exit(exitStatus)
 }
 func parseArg() (err error) {
 	args := os.Args
