@@ -101,7 +101,6 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	// Succeeded
 	os.Exit(exitStatus)
 }
 func parseArg() (err error) {
