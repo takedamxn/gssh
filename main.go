@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 )
 
 var (
@@ -30,6 +31,10 @@ var (
 	configPath string
 	port int
 	password string
+	timeout int
+)
+const(
+	version = "1.0.1"
 )
 type Session struct {
 	*ssh.Session
@@ -72,6 +77,13 @@ func main() {
 	}
 	defer ses.Close()
 	s := Session{ses}
+	if(timeout > 0){
+		go func(){
+			time.Sleep(time.Duration(timeout) * time.Second)
+			s.Signal(ssh.SIGTERM)
+			os.Exit(124)
+		}()
+	}
 	// Terminal file descpriter?
 	if terminal.IsTerminal(int(os.Stdin.Fd())) {
 		err = s.remoteShell()
@@ -98,12 +110,13 @@ func parseArg() (err error) {
 	f.BoolVar(&passEnv, "e", false, "passing to pty")
 	f.BoolVar(&tFlag, "t", false, "Force pseudo-tty allocation")
 	f.BoolVar(&vFlag, "v", false, "Display Version")
+	f.IntVar(&timeout, "w", 0, "Timeout")
 	f.BoolVar(&hFlag, "h", false, "help")
 	if err = f.Parse(args[1:]); err != nil {
 		return
 	}
 	if vFlag {
-		fmt.Println(path.Base(os.Args[0]), "version 0.9.0")
+		fmt.Println(path.Base(os.Args[0]), version)
 		os.Exit(0)
 	}
 	usage := func() {
