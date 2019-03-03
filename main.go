@@ -92,8 +92,7 @@ func main() {
 	} else {
 		err =s.remoteExec()
 	}
-	// chech remote process exit status
-	// if not set exitStatus
+	// check remote process exit status when exitStatus not set
 	if err != nil && exitStatus == 0{
 		if exitErr, ok := err.(*ssh.ExitError); ok {
 			os.Exit(exitErr.ExitStatus())
