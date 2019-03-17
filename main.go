@@ -83,7 +83,7 @@ func main() {
 			time.Sleep(time.Duration(timeout) * time.Second)
 			exitStatus = 124
 			s.Signal(ssh.SIGTERM)
-			s.Close()
+			conn.Close()
 		}()
 	}
 	// Terminal file descpriter?
