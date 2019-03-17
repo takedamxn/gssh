@@ -111,7 +111,7 @@ func parseArg() (err error) {
 	f.BoolVar(&passEnv, "e", false, "passing to pty")
 	f.BoolVar(&tFlag, "t", false, "Force pseudo-tty allocation")
 	f.BoolVar(&vFlag, "v", false, "Display Version")
-	f.IntVar(&timeout, "T", 0, "Timeout")
+	f.IntVar(&timeout, "to", 0, "Timeout")
 	f.BoolVar(&hFlag, "h", false, "help")
 	if err = f.Parse(args[1:]); err != nil {
 		return
